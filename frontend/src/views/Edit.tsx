@@ -7,20 +7,22 @@ import { useState } from 'react'
 export default function() {
   const {id} = useParams()
   const [title,setTitle] = useState('')
-
   const getTemplate = async () => {
     const res = await axios.get(`http://localhost:4000/templates/show/${id}`,{})
     const excel = res.data.template
     setTitle(excel.title)
     const luckysheet = window.luckysheet;
     luckysheet.destroy;
-    luckysheet.create({
+    let config = {
       container: 'luckysheet', //luckysheet is the container id
       showinfobar:false,
       lang: 'zh',
-      data: JSON.parse(excel.content),
       title: excel.title,
-    });
+    }
+    if(excel.content) {
+      config = {...config,data: JSON.parse(excel.content)}
+    }
+    luckysheet.create(config);
   }
   const submitContent = (title) => {
     const content = window.luckysheet.getAllSheets()
@@ -35,7 +37,7 @@ export default function() {
   }
   return (
     <div>
-      <ExcelForm title={title} submitForm={submitContent}></ExcelForm>
+      <ExcelForm showSave={true} title={title} submitForm={submitContent}></ExcelForm>
       <Luckysheet render={getTemplate}></Luckysheet>
     </div>
   )

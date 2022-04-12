@@ -1,4 +1,4 @@
-import { Table,Button } from 'antd';
+import { Table,Button,message } from 'antd';
 import {Excel} from './types';
 import 'antd/dist/antd.css';
 import axios from 'axios';
@@ -13,6 +13,7 @@ class List extends React.Component {
       return (
         <div>
           <Button style={{marginLeft: '10px'}} onClick={(() => { this.goToEdit(record.key) })}>编辑</Button>
+          <Button style={{marginLeft: '10px'}} onClick={(() => { this.deleteRecord(record.key) })}>删除</Button>
         </div>
       )}
     }
@@ -22,12 +23,22 @@ class List extends React.Component {
     this.setState({...this.state,records: res.data.records});
   }
 
-  goToEdit(id: number) {
+  deleteRecord(id) {
+    axios.delete(`http://localhost:4000/templates/${id}`,{}).then(res => {
+      if (res.data.success) {
+        message.success('删除成功!');
+        this.getRecords();
+      }
+    })
+  }
+
+  goToEdit(id: string) {
     window.open(`/edit/${id}`)
   }
   constructor(props: any) {
     super(props)
     this.getRecords.bind(this)
+    this.deleteRecord.bind(this)
     this.state = {
       records: []
     }
@@ -42,7 +53,12 @@ class List extends React.Component {
   }
   render() {
     return (
-      <Table dataSource={this.state.records} columns={this.columns}></Table>
+      <div>
+        <div style={{paddingLeft:"40px",paddingTop:"15px"}}>
+          <Button type="primary" onClick={ () => this.goToEdit("0") }>新增</Button>
+        </div>
+        <Table dataSource={this.state.records} columns={this.columns}></Table>
+      </div>
     )
   }
 }

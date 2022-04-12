@@ -7,6 +7,7 @@ import {
 
 import List from './views/List'
 import Edit from './views/Edit'
+import Preview from './views/Preview'
 import Home from './views/Home'
 
 function App() {
@@ -16,7 +17,6 @@ function App() {
         <ul>
           <li><Link to="/list">List</Link></li>
           <li><Link to="/">home</Link></li>
-          <li><Link to="/edit">new</Link></li>
         </ul>
       </div>
       <Routes>
@@ -25,6 +25,8 @@ function App() {
         <Route path="/edit/:id" element={ <Edit/> }>
         </Route>
         <Route path="/" element={ <Home /> }>
+        </Route>
+        <Route path="preview/:id" element={ <Preview /> }>
         </Route>
       </Routes>
     </BrowserRouter>
