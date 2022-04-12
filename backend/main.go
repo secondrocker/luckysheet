@@ -32,6 +32,10 @@ func main() {
 	router.GET("/templates/show/:id", func(c *gin.Context) {
 		id := c.Param("id")
 		template := &Template{}
+		if id == "0" {
+			c.JSON(http.StatusOK, gin.H{"template": template})
+			return
+		}
 		oid, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
 			log.Fatal(err)
@@ -46,8 +50,11 @@ func main() {
 		c.ShouldBind(template)
 		id := c.Request.FormValue("id")
 		var resultId string
-		if id == "" {
-			result, _ := defaultConnection().InsertOne(context.Background(), template)
+		if id == "" || id == "0" {
+			result, err := defaultConnection().InsertOne(context.Background(), bson.M{"Content": template.Content, "Title": template.Title})
+			if err != nil {
+				log.Fatal(err)
+			}
 			resultId = result.InsertedID.(primitive.ObjectID).Hex()
 		} else {
 			oid, _ := primitive.ObjectIDFromHex(id)
@@ -83,6 +90,41 @@ func main() {
 		}
 		defer cur.Close(context.Background())
 		c.JSON(http.StatusOK, gin.H{"records": records})
+	})
+
+	router.DELETE("templates/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		oid, _ := primitive.ObjectIDFromHex(id)
+		_, err := defaultConnection().DeleteOne(context.Background(), bson.M{"_id": oid})
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.JSON(http.StatusOK, gin.H{"success": err == nil})
+	})
+
+	router.POST("demo", func(c *gin.Context) {
+		records := []gin.H{
+			gin.H{
+				"sheet_name": "111",
+				"offset":     1,
+				"records": [][]interface{}{
+					[]interface{}{1, 2, 3, 4},
+					[]interface{}{2, 2, 3, 4},
+				},
+			},
+			gin.H{
+				"sheet_name": "222",
+				"offset":     2,
+				"records": [][]interface{}{
+					[]interface{}{3, 2, 3, 4},
+					[]interface{}{4, 2, 3, 4},
+				},
+			},
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"title":   "小测试",
+			"records": records,
+		})
 	})
 
 	http.ListenAndServe("localhost:4000", router)
