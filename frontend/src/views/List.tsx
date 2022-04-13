@@ -13,13 +13,14 @@ class List extends React.Component {
       return (
         <div>
           <Button style={{marginLeft: '10px'}} onClick={(() => { this.goToEdit(record.key) })}>编辑</Button>
+          {record.import_url ? <Button style={{marginLeft: '10px'}} onClick={(() => { this.goToExport(record.key) })}>导入</Button> : ''}
           <Button style={{marginLeft: '10px'}} onClick={(() => { this.deleteRecord(record.key) })}>删除</Button>
         </div>
       )}
     }
   ]
   async getRecords(page = 1,per_page = 10){
-    const res = await axios.get('http://localhost:4000/templates')
+    const res = await axios.get('http://localhost:4000/templates?page=1')
     this.setState({...this.state,records: res.data.records});
   }
 
@@ -35,10 +36,14 @@ class List extends React.Component {
   goToEdit(id: string) {
     window.open(`/edit/${id}`)
   }
+  goToExport(id: string) {
+    window.open(`/import_excel/${id}`)
+  }
   constructor(props: any) {
     super(props)
     this.getRecords.bind(this)
     this.deleteRecord.bind(this)
+    // this.changePage.bind(this)
     this.state = {
       records: []
     }

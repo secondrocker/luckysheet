@@ -1,19 +1,25 @@
-import { Form,Input,Button,Upload } from 'antd'
+import { Form,Input,Button,Upload,Checkbox } from 'antd'
 import 'antd/dist/antd.css';
 import { Excel } from './types'
 import LuckyExcel from 'luckyexcel'
 import excelExport from '../export_excel'
+import { useState } from 'react';
+import axios from 'axios';
 
 interface EditProps {
   title: string;
+  importUrl?: string;
   showSave: boolean;
-  submitForm(excel: Excel): void;
+  showExport?: boolean;
+  submitForm?(title: string,import_url: string): void;
+  importExcel?(): void
 }
 export default function(props: EditProps){
   const onFinish = (values) => {
     console.log(values)
-    props.submitForm(values['title'])
+    if(props.submitForm) props.submitForm(values['title'],values['import_url'])
   }
+
   const processFile = (event) => {
     LuckyExcel.transformExcelToLucky(event.target.files[0], function(exportJson, luckysheetfile){
       luckysheet.destroy();
@@ -33,7 +39,9 @@ export default function(props: EditProps){
   const [form] = Form.useForm();
   // let form = { title: props.title});
   form.setFieldsValue({ title: props.title});
-
+  if(props.importUrl) {
+    form.setFieldsValue({import_url: props.importUrl})
+  }
   const saveAs = (obj, fileName) => {
     var tmpa = document.createElement("a");
     tmpa.download = fileName || "download";
@@ -52,6 +60,11 @@ export default function(props: EditProps){
 
   }
 
+  const btnImportExcel = () => {
+    if(props.importExcel) props.importExcel()
+  }
+
+
   return (
     <Form form={form} layout="inline" onFinish={onFinish}>
       <Form.Item name={['title']} label="excel文件名">
@@ -60,6 +73,9 @@ export default function(props: EditProps){
       {
         props.showSave ? (
           <div style={{display: "flex"}}>
+            <Form.Item name={['import_url']} label="导入地址">
+              <Input placeholder='请输入导入地址' />
+            </Form.Item>
             <Form.Item>
               <input style={{fontSize: "14px"}} type="file" accept=".xlsx" onChange={processFile} />
             </Form.Item>
@@ -67,7 +83,14 @@ export default function(props: EditProps){
               <Button type="primary" htmlType="submit">保存</Button>
             </Form.Item>
           </div>
-        ) : (
+        ) : ''
+      },
+      {
+        props.showExport ? (
+          <Form.Item>
+            <Button type="primary" onClick={btnImportExcel}>导入</Button>
+          </Form.Item>
+        ) :  (
           <Form.Item>
             <Button type="primary" onClick={exportJSON}>导出</Button>
           </Form.Item>

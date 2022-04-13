@@ -8,6 +8,7 @@ import {
 import List from './views/List'
 import Edit from './views/Edit'
 import Preview from './views/Preview'
+import ImportExcel from './views/ImportExcel'
 import Home from './views/Home'
 
 function App() {
@@ -27,6 +28,8 @@ function App() {
         <Route path="/" element={ <Home /> }>
         </Route>
         <Route path="preview/:id" element={ <Preview /> }>
+        </Route>
+        <Route path="import_excel/:id" element={ <ImportExcel /> }>
         </Route>
       </Routes>
     </BrowserRouter>
