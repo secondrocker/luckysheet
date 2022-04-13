@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -15,10 +16,17 @@ import (
 )
 
 type Template struct {
-	Id       string `json:"key" bson:"_id"`
-	Title    string `json:"title" bson:"Title" form:"title"`
-	Employee string `json:"employee" bson:"Employee"`
-	Content  string `json:"content" bson:"Content" form:"content"`
+	Id        string `json:"key" bson:"_id"`
+	Title     string `json:"title" bson:"Title" form:"title"`
+	Employee  string `json:"employee" bson:"Employee"`
+	Content   string `json:"content" bson:"Content" form:"content"`
+	ImportUrl string `json:"import_url" bson:"ImportUrl" form:"import_url"`
+}
+
+type ImportExcel struct {
+	Content    string `json:"content" bson:"Content" form:"content"`
+	TemplateId string `json:"template_id" bson:"template_id"`
+	Imported   bool   `json:"imported" bson:"imported"`
 }
 
 func defaultConnection() *mongo.Collection {
@@ -51,14 +59,14 @@ func main() {
 		id := c.Request.FormValue("id")
 		var resultId string
 		if id == "" || id == "0" {
-			result, err := defaultConnection().InsertOne(context.Background(), bson.M{"Content": template.Content, "Title": template.Title})
+			result, err := defaultConnection().InsertOne(context.Background(), bson.M{"Content": template.Content, "Title": template.Title, "ImportUrl": template.ImportUrl})
 			if err != nil {
 				log.Fatal(err)
 			}
 			resultId = result.InsertedID.(primitive.ObjectID).Hex()
 		} else {
 			oid, _ := primitive.ObjectIDFromHex(id)
-			data := bson.M{"$set": bson.M{"Content": template.Content, "Title": template.Title}}
+			data := bson.M{"$set": bson.M{"Content": template.Content, "Title": template.Title, "ImportUrl": template.ImportUrl}}
 			_, err := defaultConnection().UpdateByID(context.Background(), oid, data)
 			if err != nil {
 				log.Fatal(err)
@@ -68,19 +76,24 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"id": resultId})
 	})
 
-	router.POST("/templates/save_content", func(c *gin.Context) {
-		id := c.Request.FormValue("id")
-		content := c.Request.FormValue("id")
-		defaultConnection().UpdateByID(context.Background(), id, Template{Content: content})
-		c.JSON(http.StatusOK, gin.H{"id": id})
-
+	router.POST("/templates/import_excel", func(c *gin.Context) {
+		data := bson.M{
+			"Content":    c.Request.FormValue("content"),
+			"TemplateId": c.Request.FormValue("template_id"),
+			"Imported":   c.Request.FormValue("imported"),
+		}
+		result, _ := defaultConnection().InsertOne(context.Background(), data)
+		resultId := result.InsertedID.(primitive.ObjectID).Hex()
+		c.JSON(http.StatusOK, gin.H{"id": resultId})
 	})
 
 	router.GET("templates", func(c *gin.Context) {
 		records := []Template{}
-		opts := options.Find().SetProjection(bson.D{{"_id", 1}, {"Title", 2}, {"Employee", 3}})
-
-		cur, err := defaultConnection().Find(context.Background(), bson.M{}, opts)
+		page, _ := strconv.ParseInt(c.Query("page"), 10, 32)
+		opts := options.Find().SetProjection(bson.D{{"_id", 1}, {"Title", 2}, {"Employee", 3}, {"ImportUrl", 3}})
+		opts.SetLimit(10)
+		opts.SetSkip((page - 1) * 10)
+		cur, err := defaultConnection().Find(context.Background(), bson.M{"Imported": nil}, opts)
 		if err != nil {
 			log.Fatal(err)
 		}
